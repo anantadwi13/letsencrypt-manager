@@ -20,7 +20,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/certificate"
+                  $ref: "#/components/schemas/certificate-res"
         default:
           $ref: "#/components/responses/default-error"
     post:
@@ -42,7 +42,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/certificate"
+                $ref: "#/components/schemas/certificate-res"
         400:
           $ref: "#/components/responses/bad-request"
         default:
@@ -71,7 +71,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/certificate"
+                $ref: "#/components/schemas/certificate-res"
         404:
           $ref: '#/components/responses/not-found'
         default:
@@ -112,7 +112,7 @@ paths:
           $ref: '#/components/responses/default-error'
 components:
   schemas:
-    certificate:
+    certificate-res:
       title: Certificate
       type: object
       required:
@@ -120,10 +120,13 @@ components:
       properties:
         domain:
           type: string
-        certificate:
+        public_cert:
           type: string
           format: binary
-    error:
+        private_cert:
+          type: string
+          format: binary
+    error-res:
       title: Error
       type: object
       required:
@@ -142,16 +145,16 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/error'
+            $ref: '#/components/schemas/error-res'
     not-found:
       description: Not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/error'
+            $ref: '#/components/schemas/error-res'
     default-error:
       description: General error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/error'
+            $ref: '#/components/schemas/error-res'
