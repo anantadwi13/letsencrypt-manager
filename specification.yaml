@@ -1,0 +1,157 @@
+openapi: 3.0.3
+info:
+  title: Let's Encrypt Manager
+  description: Let's Encrypt Manager
+  version: 0.1.0
+servers:
+  - url: 'http://{hostname}:5555'
+    variables:
+      hostname:
+        default: localhost
+paths:
+  /certificates:
+    get:
+      summary: Get all certificates
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/certificate"
+        default:
+          $ref: "#/components/responses/default-error"
+    post:
+      summary: Create certificate
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                email:
+                  type: string
+                  description: Email address
+                domain:
+                  type: string
+                  description: Domain
+      responses:
+        201:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/certificate"
+        400:
+          $ref: "#/components/responses/bad-request"
+        default:
+          $ref: "#/components/responses/default-error"
+    put:
+      summary: Renew all certificates
+      responses:
+        200:
+          description: Success
+          content: { }
+        default:
+          $ref: "#/components/responses/default-error"
+  /certificates/{domain}:
+    get:
+      summary: Get certificate by domain name
+      parameters:
+        - name: domain
+          in: path
+          description: Domain name
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/certificate"
+        404:
+          $ref: '#/components/responses/not-found'
+        default:
+          $ref: '#/components/responses/default-error'
+    put:
+      summary: Renew certificate for selected domain
+      parameters:
+        - name: domain
+          in: path
+          description: Domain name
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content: { }
+        404:
+          $ref: "#/components/responses/not-found"
+        default:
+          $ref: "#/components/responses/default-error"
+    delete:
+      summary: Delete certificate
+      parameters:
+        - name: domain
+          in: path
+          description: Domain name
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content: { }
+        404:
+          $ref: '#/components/responses/not-found'
+        default:
+          $ref: '#/components/responses/default-error'
+components:
+  schemas:
+    certificate:
+      title: Certificate
+      type: object
+      required:
+        - name
+      properties:
+        domain:
+          type: string
+        certificate:
+          type: string
+          format: binary
+    error:
+      title: Error
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          nullable: true
+        message:
+          type: string
+          nullable: true
+  responses:
+    bad-request:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    not-found:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    default-error:
+      description: General error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
