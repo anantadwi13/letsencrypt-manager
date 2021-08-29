@@ -13,6 +13,7 @@ FROM certbot/certbot:v1.18.0
 
 WORKDIR /root
 COPY --from=builder /go/src/letsencrypt/service .
+COPY specification.yaml .
 
 VOLUME ["/etc/letsencrypt"]
 
