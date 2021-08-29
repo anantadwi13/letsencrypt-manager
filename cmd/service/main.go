@@ -41,7 +41,7 @@ func main() {
 		fmt.Println("Not found")
 	}
 	for _, certificate := range certs {
-		fmt.Println(certificate)
+		fmt.Println(certificate.Name, certificate.Domains, certificate.ExpiryDate)
 	}
 
 	wg.Wait()

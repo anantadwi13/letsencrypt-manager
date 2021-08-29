@@ -19,9 +19,9 @@ func NewCertbot() CertificateManager {
 
 func (c *certbot) GetAll(ctx context.Context) ([]*Certificate, error) {
 	var (
-		separatorStr   = "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-		notFoundStr    = "No certificates found."
-		foundStr       = "Found the following certs:"
+		separatorStr = "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+		notFoundStr  = "No certificates found."
+		//foundStr       = "Found the following certs:"
 		certNameStr    = "  Certificate Name: "
 		serialNumStr   = "    Serial Number: "
 		keyTypeStr     = "    Key Type: "
@@ -42,7 +42,6 @@ func (c *certbot) GetAll(ctx context.Context) ([]*Certificate, error) {
 	//response = string(resByte)
 	resSplit := strings.Split(response, "\n")
 	isOpened := false
-	isFound := false
 	var certs []*Certificate
 	var currentCert *Certificate
 	for _, str := range resSplit {
@@ -51,71 +50,64 @@ func (c *certbot) GetAll(ctx context.Context) ([]*Certificate, error) {
 		}
 		if strings.Contains(str, separatorStr) {
 			isOpened = !isOpened
-			continue
 		}
 		if isOpened {
 			if str == notFoundStr {
 				return nil, nil
 			}
-			if str == foundStr {
-				isFound = true
+			if strings.Contains(str, certNameStr) {
+				if currentCert != nil {
+					certs = append(certs, currentCert)
+				}
+				currentCert = new(Certificate)
+				certName := strings.ReplaceAll(str, certNameStr, "")
+				currentCert.Name = certName
 				continue
 			}
-			if isFound {
-				if strings.Contains(str, certNameStr) {
-					if currentCert != nil {
-						certs = append(certs, currentCert)
-					}
-					currentCert = new(Certificate)
-					certName := strings.ReplaceAll(str, certNameStr, "")
-					currentCert.Name = certName
-					continue
+			if currentCert == nil {
+				continue
+			}
+			if strings.Contains(str, serialNumStr) {
+				serialNumber := strings.ReplaceAll(str, serialNumStr, "")
+				currentCert.SerialNumber = serialNumber
+				continue
+			}
+			if strings.Contains(str, keyTypeStr) {
+				keyType := strings.ReplaceAll(str, keyTypeStr, "")
+				currentCert.KeyType = keyType
+				continue
+			}
+			if strings.Contains(str, domainsStr) {
+				domains := strings.ReplaceAll(str, domainsStr, "")
+				currentCert.Domains = strings.Split(domains, " ")
+				continue
+			}
+			if strings.Contains(str, expiryDateStr) {
+				expiryDate := strings.ReplaceAll(str, expiryDateStr, "")
+				date, err := time.Parse("2006-01-02 15:04:05-07:00", expiryDate[:25])
+				if err != nil {
+					return nil, err
 				}
-				if currentCert == nil {
-					continue
+				currentCert.ExpiryDate = date
+				continue
+			}
+			if strings.Contains(str, certPathStr) {
+				certPath := strings.ReplaceAll(str, certPathStr, "")
+				cert, err := readFile(certPath)
+				if err != nil {
+					return nil, err
 				}
-				if strings.Contains(str, serialNumStr) {
-					serialNumber := strings.ReplaceAll(str, serialNumStr, "")
-					currentCert.SerialNumber = serialNumber
-					continue
+				currentCert.Public = cert
+				continue
+			}
+			if strings.Contains(str, privKeyPathStr) {
+				privKeyPath := strings.ReplaceAll(str, privKeyPathStr, "")
+				privKey, err := readFile(privKeyPath)
+				if err != nil {
+					return nil, err
 				}
-				if strings.Contains(str, keyTypeStr) {
-					keyType := strings.ReplaceAll(str, keyTypeStr, "")
-					currentCert.KeyType = keyType
-					continue
-				}
-				if strings.Contains(str, domainsStr) {
-					domains := strings.ReplaceAll(str, domainsStr, "")
-					currentCert.Domains = strings.Split(domains, " ")
-					continue
-				}
-				if strings.Contains(str, expiryDateStr) {
-					expiryDate := strings.ReplaceAll(str, expiryDateStr, "")
-					date, err := time.Parse("2006-01-02 15:04:05-07:00", expiryDate[:25])
-					if err != nil {
-						return nil, err
-					}
-					currentCert.ExpiryDate = date
-					continue
-				}
-				if strings.Contains(str, certPathStr) {
-					certPath := strings.ReplaceAll(str, certPathStr, "")
-					cert, err := readFile(certPath)
-					if err != nil {
-						return nil, err
-					}
-					currentCert.Public = cert
-					continue
-				}
-				if strings.Contains(str, privKeyPathStr) {
-					privKeyPath := strings.ReplaceAll(str, privKeyPathStr, "")
-					privKey, err := readFile(privKeyPath)
-					if err != nil {
-						return nil, err
-					}
-					currentCert.Private = privKey
-					continue
-				}
+				currentCert.Private = privKey
+				continue
 			}
 		} else {
 			if currentCert != nil {
