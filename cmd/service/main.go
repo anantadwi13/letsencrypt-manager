@@ -28,7 +28,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	cert, err := certMan.Add(ctx, "*.coba.anantadwi13.com", "anantadwi@aaa.com")
+	cert, err := certMan.Add(ctx, "anantadwi@aaa.com", "coba.anantadwi13.com", "www.coba.anantadwi13.com")
 	if err != nil {
 		log.Println("error", err)
 	}

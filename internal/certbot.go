@@ -141,8 +141,12 @@ func (c *certbot) Get(ctx context.Context, domain string) (*Certificate, error) 
 	return cert, nil
 }
 
-func (c *certbot) Add(ctx context.Context, domain, email string) (*Certificate, error) {
-	cmd, err := runCommand(ctx, "certbot", "certonly", "--webroot", "-m", email, "--agree-tos", "-w", "./public", "-d", domain, "-n")
+func (c *certbot) Add(ctx context.Context, email string, domain string, altDomains ...string) (*Certificate, error) {
+	args := []string{"certonly", "--webroot", "-n", "-m", email, "--agree-tos", "-w", "./public", "-d", domain}
+	for _, altDomain := range altDomains {
+		args = append(args, "-d", altDomain)
+	}
+	cmd, err := runCommand(ctx, "certbot", args...)
 	if err != nil {
 		raw := strings.Split(cmd, "\n")
 		for _, s := range raw {
