@@ -1,7 +1,7 @@
 FROM golang:1.17 AS builder
 
 WORKDIR /go/src/letsencrypt
-COPY go.* .
+COPY go.* ./
 RUN go mod download
 COPY cmd cmd
 COPY internal internal
