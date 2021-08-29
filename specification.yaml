@@ -33,9 +33,17 @@ paths:
                 email:
                   type: string
                   description: Email address
+                  example: admin@example.com
                 domain:
                   type: string
                   description: Domain
+                  example: example.com
+                alt_domain:
+                  type: array
+                  items:
+                    type: string
+                  description: Alternative Domain
+                  example: [ www.example.com, sub.example.com ]
       responses:
         201:
           description: Success

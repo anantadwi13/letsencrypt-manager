@@ -11,10 +11,11 @@ import (
 )
 
 type certbot struct {
+	config Config
 }
 
-func NewCertbot() CertificateManager {
-	return &certbot{}
+func NewCertbot(config Config) CertificateManager {
+	return &certbot{config: config}
 }
 
 func (c *certbot) GetAll(ctx context.Context) ([]*Certificate, error) {
@@ -134,7 +135,9 @@ func (c *certbot) Get(ctx context.Context, domain string) (*Certificate, error) 
 }
 
 func (c *certbot) Add(ctx context.Context, email string, domain string, altDomains ...string) (*Certificate, error) {
-	args := []string{"certonly", "--webroot", "-n", "-m", email, "--agree-tos", "-w", "./public", "-d", domain}
+	args := []string{
+		"certonly", "--webroot", "-n", "-m", email, "--agree-tos", "-w", c.config.PublicStaticPath(), "-d", domain,
+	}
 	for _, altDomain := range altDomains {
 		args = append(args, "-d", altDomain)
 	}
