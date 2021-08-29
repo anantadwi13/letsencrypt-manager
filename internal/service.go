@@ -53,7 +53,7 @@ func (s *service) registerDependencies() {
 	s.api.Use(middleware.Logger())
 	s.api.Use(middleware.Recover())
 
-	err := os.Mkdir(s.config.PublicStaticPath(), 0777)
+	err := os.MkdirAll(s.config.PublicStaticPath(), 0777)
 	if err != nil {
 		log.Panicln(err)
 	}
