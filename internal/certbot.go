@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -34,7 +35,7 @@ func (c *certbot) GetAll(ctx context.Context) ([]*Certificate, error) {
 
 	response, err := runCommand(ctx, "certbot", "certificates")
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err.Error() + "\n" + response)
 	}
 	//resByte, err := os.ReadFile("./temp/example.response")
 	//if err != nil {
@@ -141,13 +142,13 @@ func (c *certbot) Add(ctx context.Context, email string, domain string, altDomai
 	for _, altDomain := range altDomains {
 		args = append(args, "-d", altDomain)
 	}
-	cmd, err := runCommand(ctx, "certbot", args...)
+	response, err := runCommand(ctx, "certbot", args...)
 	if err != nil {
-		raw := strings.Split(cmd, "\n")
+		raw := strings.Split(response, "\n")
 		for _, s := range raw {
 			log.Println(s)
 		}
-		return nil, err
+		return nil, errors.New(err.Error() + "\n" + response)
 	}
 	cert, err := c.Get(ctx, domain)
 	if err != nil {
@@ -157,37 +158,37 @@ func (c *certbot) Add(ctx context.Context, email string, domain string, altDomai
 }
 
 func (c *certbot) Delete(ctx context.Context, domain string) error {
-	cmd, err := runCommand(ctx, "certbot", "delete", "--cert-name", domain, "-n")
+	response, err := runCommand(ctx, "certbot", "delete", "--cert-name", domain, "-n")
 	if err != nil {
-		raw := strings.Split(cmd, "\n")
+		raw := strings.Split(response, "\n")
 		for _, s := range raw {
 			log.Println(s)
 		}
-		return err
+		return errors.New(err.Error() + "\n" + response)
 	}
 	return nil
 }
 
 func (c *certbot) RenewAll(ctx context.Context) error {
-	cmd, err := runCommand(ctx, "certbot", "renew")
+	response, err := runCommand(ctx, "certbot", "renew")
 	if err != nil {
-		raw := strings.Split(cmd, "\n")
+		raw := strings.Split(response, "\n")
 		for _, s := range raw {
 			log.Println(s)
 		}
-		return err
+		return errors.New(err.Error() + "\n" + response)
 	}
 	return nil
 }
 
 func (c *certbot) Renew(ctx context.Context, domain string) error {
-	cmd, err := runCommand(ctx, "certbot", "renew", "--cert-name", domain)
+	response, err := runCommand(ctx, "certbot", "renew", "--cert-name", domain)
 	if err != nil {
-		raw := strings.Split(cmd, "\n")
+		raw := strings.Split(response, "\n")
 		for _, s := range raw {
 			log.Println(s)
 		}
-		return err
+		return errors.New(err.Error() + "\n" + response)
 	}
 	return nil
 }
