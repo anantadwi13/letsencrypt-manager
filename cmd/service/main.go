@@ -4,13 +4,38 @@ import (
 	"context"
 	"fmt"
 	"github.com/anantadwi13/letsencrypt-manager/internal"
+	"log"
+	"os"
+	"sync"
+	"time"
 )
 
 func main() {
 	certMan := internal.NewCertbot()
-	certs, err := certMan.GetAll(context.TODO())
+	ctx := context.TODO()
+	wg := sync.WaitGroup{}
+	err := os.Mkdir("./public", 0777)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
+	}
+
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		s := internal.NewService()
+		s.Start()
+	}()
+
+	time.Sleep(1 * time.Second)
+
+	cert, err := certMan.Add(ctx, "*.coba.anantadwi13.com", "anantadwi@aaa.com")
+	if err != nil {
+		log.Println("error", err)
+	}
+	fmt.Println(cert)
+	certs, err := certMan.GetAll(ctx)
+	if err != nil {
+		log.Println(err)
 	}
 	if len(certs) <= 0 {
 		fmt.Println("Not found")
@@ -18,6 +43,6 @@ func main() {
 	for _, certificate := range certs {
 		fmt.Println(certificate)
 	}
-	//s := internal.NewService()
-	//s.Start()
+
+	wg.Wait()
 }

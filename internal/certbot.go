@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -126,28 +127,79 @@ func (c *certbot) GetAll(ctx context.Context) ([]*Certificate, error) {
 }
 
 func (c *certbot) Get(ctx context.Context, domain string) (*Certificate, error) {
-	panic("implement me")
+	certs, err := c.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var cert *Certificate
+	for _, c := range certs {
+		if c.Name == domain {
+			cert = c
+			break
+		}
+	}
+	return cert, nil
 }
 
 func (c *certbot) Add(ctx context.Context, domain, email string) (*Certificate, error) {
-	panic("implement me")
+	cmd, err := runCommand(ctx, "certbot", "certonly", "--webroot", "-m", email, "--agree-tos", "-w", "./public", "-d", domain, "-n")
+	if err != nil {
+		raw := strings.Split(cmd, "\n")
+		for _, s := range raw {
+			log.Println(s)
+		}
+		return nil, err
+	}
+	cert, err := c.Get(ctx, domain)
+	if err != nil {
+		return nil, err
+	}
+	return cert, nil
 }
 
 func (c *certbot) Delete(ctx context.Context, domain string) error {
-	panic("implement me")
+	cmd, err := runCommand(ctx, "certbot", "delete", "--cert-name", domain, "-n")
+	if err != nil {
+		raw := strings.Split(cmd, "\n")
+		for _, s := range raw {
+			log.Println(s)
+		}
+		return err
+	}
+	return nil
 }
 
 func (c *certbot) RenewAll(ctx context.Context) error {
-	panic("implement me")
+	cmd, err := runCommand(ctx, "certbot", "renew")
+	if err != nil {
+		raw := strings.Split(cmd, "\n")
+		for _, s := range raw {
+			log.Println(s)
+		}
+		return err
+	}
+	return nil
 }
 
 func (c *certbot) Renew(ctx context.Context, domain string) error {
-	panic("implement me")
+	cmd, err := runCommand(ctx, "certbot", "renew", "--cert-name", domain)
+	if err != nil {
+		raw := strings.Split(cmd, "\n")
+		for _, s := range raw {
+			log.Println(s)
+		}
+		return err
+	}
+	return nil
 }
 
 func runCommand(ctx context.Context, name string, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
 	raw, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", err
+	}
+	stdErr, err := cmd.StderrPipe()
 	if err != nil {
 		return "", err
 	}
@@ -159,9 +211,13 @@ func runCommand(ctx context.Context, name string, args ...string) (string, error
 	if err != nil {
 		return "", err
 	}
-	err = cmd.Wait()
+	errBytes, err := io.ReadAll(stdErr)
 	if err != nil {
 		return "", err
+	}
+	err = cmd.Wait()
+	if err != nil {
+		return string(errBytes), err
 	}
 	return string(resBytes), nil
 }
