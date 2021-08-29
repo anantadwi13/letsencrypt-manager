@@ -2,9 +2,11 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -94,26 +96,140 @@ func (s *service) Shutdown() {
 	s.shutdownWg.Wait()
 }
 
-func (s *service) GetCertificates(ctx echo.Context) error {
-	panic("implement me")
+func (s *service) GetCertificates(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	certs, err := s.certMan.GetAll(ctx)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+
+	var res []*CertificateRes
+	for _, cert := range certs {
+		res = append(res, &CertificateRes{
+			Domains:      cert.Domains,
+			ExpiryDate:   cert.ExpiryDate,
+			KeyType:      cert.KeyType,
+			Name:         cert.Name,
+			PrivateCert:  cert.Private,
+			PublicCert:   cert.Public,
+			SerialNumber: cert.SerialNumber,
+		})
+	}
+	if res == nil {
+		res = []*CertificateRes{}
+	}
+	return c.JSON(200, res)
 }
 
-func (s *service) PostCertificates(ctx echo.Context) error {
-	panic("implement me")
+func (s *service) PostCertificates(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	req := new(CertificateReq)
+	err := c.Bind(req)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+
+	if req.Email == "" || req.Domain == "" {
+		return responseBadRequest(c, errors.New("make sure email and domain are filled"))
+	}
+
+	if req.AltDomains == nil {
+		req.AltDomains = &[]string{}
+	}
+
+	cert, err := s.certMan.Add(ctx, req.Email, req.Domain, *req.AltDomains...)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+
+	return c.JSON(http.StatusCreated, cert)
 }
 
-func (s *service) PutCertificates(ctx echo.Context) error {
-	panic("implement me")
+func (s *service) PutCertificates(c echo.Context) error {
+	ctx := c.Request().Context()
+	err := s.certMan.RenewAll(ctx)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+	return c.JSON(http.StatusOK, GeneralRes{
+		Code:    200,
+		Message: "ok",
+	})
 }
 
-func (s *service) DeleteCertificatesDomain(ctx echo.Context, domain string) error {
-	panic("implement me")
+func (s *service) DeleteCertificatesDomain(c echo.Context, domain string) error {
+	ctx := c.Request().Context()
+	cert, err := s.certMan.Get(ctx, domain)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+	if cert == nil {
+		return responseNotFound(c, "Certificate is not found")
+	}
+
+	err = s.certMan.Delete(ctx, cert.Name)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+	return c.JSON(http.StatusOK, GeneralRes{
+		Code:    200,
+		Message: "ok",
+	})
 }
 
-func (s *service) GetCertificatesDomain(ctx echo.Context, domain string) error {
-	panic("implement me")
+func (s *service) GetCertificatesDomain(c echo.Context, domain string) error {
+	ctx := c.Request().Context()
+
+	cert, err := s.certMan.Get(ctx, domain)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+	if cert == nil {
+		return responseNotFound(c, "Certificate is not found")
+	}
+	return c.JSON(http.StatusOK, cert)
 }
 
-func (s *service) PutCertificatesDomain(ctx echo.Context, domain string) error {
-	panic("implement me")
+func (s *service) PutCertificatesDomain(c echo.Context, domain string) error {
+	ctx := c.Request().Context()
+	cert, err := s.certMan.Get(ctx, domain)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+	if cert == nil {
+		return responseNotFound(c, "Certificate is not found")
+	}
+
+	err = s.certMan.Renew(ctx, domain)
+	if err != nil {
+		return responseServerErr(c, err)
+	}
+	return c.JSON(http.StatusOK, GeneralRes{
+		Code:    200,
+		Message: "ok",
+	})
+}
+
+func responseNotFound(c echo.Context, message string) error {
+	return c.JSON(http.StatusBadGateway, GeneralRes{
+		Code:    404,
+		Message: message,
+	})
+}
+
+func responseServerErr(c echo.Context, err error) error {
+	log.Println(err)
+	return c.JSON(http.StatusBadGateway, GeneralRes{
+		Code:    500,
+		Message: err.Error(),
+	})
+}
+
+func responseBadRequest(c echo.Context, err error) error {
+	return c.JSON(http.StatusBadRequest, GeneralRes{
+		Code:    400,
+		Message: err.Error(),
+	})
 }

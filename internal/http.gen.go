@@ -6,32 +6,60 @@ package internal
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/labstack/echo/v4"
 )
 
-// CertificateRes defines model for certificate-res.
-type CertificateRes struct {
-	Domain      *string `json:"domain,omitempty"`
-	PrivateCert *string `json:"private_cert,omitempty"`
-	PublicCert  *string `json:"public_cert,omitempty"`
+// CertificateReq defines model for certificate-req.
+type CertificateReq struct {
+	// Alternative Domain
+	AltDomains *[]string `json:"alt_domains,omitempty"`
+
+	// Domain
+	Domain string `json:"domain"`
+
+	// Email address
+	Email string `json:"email"`
 }
 
-// ErrorRes defines model for error-res.
-type ErrorRes struct {
-	Code    *int    `json:"code"`
-	Message *string `json:"message"`
+// CertificateRes defines model for certificate-res.
+type CertificateRes struct {
+	// List domains (Main + Alternative domains)
+	Domains    []string  `json:"domains"`
+	ExpiryDate time.Time `json:"expiry_date"`
+	KeyType    string    `json:"key_type"`
+
+	// Certificate Name (Main domain)
+	Name        string `json:"name"`
+	PrivateCert string `json:"private_cert"`
+	PublicCert  string `json:"public_cert"`
+
+	// Serial Number
+	SerialNumber string `json:"serial_number"`
+}
+
+// GeneralRes defines model for general-res.
+type GeneralRes struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 // BadRequest defines model for bad-request.
-type BadRequest ErrorRes
+type BadRequest GeneralRes
 
 // DefaultError defines model for default-error.
-type DefaultError ErrorRes
+type DefaultError GeneralRes
 
 // NotFound defines model for not-found.
-type NotFound ErrorRes
+type NotFound GeneralRes
+
+// PostCertificatesJSONBody defines parameters for PostCertificates.
+type PostCertificatesJSONBody CertificateReq
+
+// PostCertificatesJSONRequestBody defines body for PostCertificates for application/json ContentType.
+type PostCertificatesJSONRequestBody PostCertificatesJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {

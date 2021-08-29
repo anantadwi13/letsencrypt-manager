@@ -27,23 +27,9 @@ paths:
       summary: Create certificate
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              properties:
-                email:
-                  type: string
-                  description: Email address
-                  example: admin@example.com
-                domain:
-                  type: string
-                  description: Domain
-                  example: example.com
-                alt_domain:
-                  type: array
-                  items:
-                    type: string
-                  description: Alternative Domain
-                  example: [ www.example.com, sub.example.com ]
+              $ref: "#/components/schemas/certificate-req"
       responses:
         201:
           description: Success
@@ -60,7 +46,10 @@ paths:
       responses:
         200:
           description: Success
-          content: { }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/general-res"
         default:
           $ref: "#/components/responses/default-error"
   /certificates/{domain}:
@@ -96,7 +85,10 @@ paths:
       responses:
         200:
           description: Success
-          content: { }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/general-res"
         404:
           $ref: "#/components/responses/not-found"
         default:
@@ -113,29 +105,73 @@ paths:
       responses:
         200:
           description: Success
-          content: { }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/general-res"
         404:
           $ref: '#/components/responses/not-found'
         default:
           $ref: '#/components/responses/default-error'
 components:
   schemas:
+    certificate-req:
+      type: object
+      required: [ email,domain ]
+      properties:
+        email:
+          type: string
+          description: Email address
+          example: admin@example.com
+        domain:
+          type: string
+          description: Domain
+          example: example.com
+        alt_domains:
+          type: array
+          items:
+            type: string
+          description: Alternative Domain
+          example: [ www.example.com, sub.example.com ]
     certificate-res:
       title: Certificate
       type: object
       required:
         - name
+        - serial_number
+        - key_type
+        - expiry_date
+        - domains
+        - public_cert
+        - private_cert
       properties:
-        domain:
+        name:
           type: string
+          description: Certificate Name (Main domain)
+          example: example.com
+        serial_number:
+          type: string
+          description: Serial Number
+        key_type:
+          type: string
+          example: RSA
+        expiry_date:
+          type: string
+          format: date-time
+        domains:
+          type: array
+          items:
+            type: string
+          description: List domains (Main + Alternative domains)
+          example: [ example.com, www.example.com, sub.example.com ]
         public_cert:
           type: string
           format: binary
         private_cert:
           type: string
           format: binary
-    error-res:
-      title: Error
+    general-res:
+      title: General Response
       type: object
       required:
         - code
@@ -143,26 +179,24 @@ components:
       properties:
         code:
           type: integer
-          nullable: true
         message:
           type: string
-          nullable: true
   responses:
     bad-request:
       description: Bad request
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/error-res'
+            $ref: '#/components/schemas/general-res'
     not-found:
       description: Not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/error-res'
+            $ref: '#/components/schemas/general-res'
     default-error:
       description: General error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/error-res'
+            $ref: '#/components/schemas/general-res'
