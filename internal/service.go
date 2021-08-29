@@ -189,7 +189,16 @@ func (s *service) GetCertificatesDomain(c echo.Context, domain string) error {
 	if cert == nil {
 		return responseNotFound(c, "Certificate is not found")
 	}
-	return c.JSON(http.StatusOK, cert)
+	certRes := &CertificateRes{
+		Domains:      cert.Domains,
+		ExpiryDate:   cert.ExpiryDate,
+		KeyType:      cert.KeyType,
+		Name:         cert.Name,
+		PrivateCert:  cert.Private,
+		PublicCert:   cert.Public,
+		SerialNumber: cert.SerialNumber,
+	}
+	return c.JSON(http.StatusOK, certRes)
 }
 
 func (s *service) PutCertificatesDomain(c echo.Context, domain string) error {
