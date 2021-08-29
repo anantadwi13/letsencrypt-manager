@@ -144,7 +144,16 @@ func (s *service) PostCertificates(c echo.Context) error {
 		return responseServerErr(c, err)
 	}
 
-	return c.JSON(http.StatusCreated, cert)
+	certRes := &CertificateRes{
+		Domains:      cert.Domains,
+		ExpiryDate:   cert.ExpiryDate,
+		KeyType:      cert.KeyType,
+		Name:         cert.Name,
+		PrivateCert:  cert.Private,
+		PublicCert:   cert.Public,
+		SerialNumber: cert.SerialNumber,
+	}
+	return c.JSON(http.StatusCreated, certRes)
 }
 
 func (s *service) PutCertificates(c echo.Context) error {
