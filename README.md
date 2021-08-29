@@ -12,11 +12,14 @@ Manage Let's Encrypt certificates via REST API
 
 ```shell
 docker run -it --name letsencrypt-manager \
-      -p 80:80 \        # Let's Encrypt challenge port
-      -p 5555:5555 \    # API port
+      -p 80:80 \
+      -p 5555:5555 \
       -v $(pwd)/temp/letsencrypt:/etc/letsencrypt \
       anantadwi13/letsencrypt-manager
 ```
+Notes :
+- Port `80` for Let's Encrypt challenge
+- Port `5555` for API endpoint
 
 ## Usage
 
