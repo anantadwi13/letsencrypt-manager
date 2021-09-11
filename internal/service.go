@@ -46,6 +46,8 @@ func (s *service) Start() {
 func (s *service) registerDependencies() {
 	s.static = echo.New()
 	s.api = echo.New()
+	s.static.HideBanner = true
+	s.api.HideBanner = true
 	s.certMan = NewCertbot(s.config)
 
 	s.static.Use(middleware.Logger())
@@ -67,7 +69,7 @@ func (s *service) registerDependencies() {
 			<!DOCTYPE html>
 			<html>
 			  <head>
-				<title>ReDoc</title>
+				<title>Let's Encrypt Manager</title>
 				<!-- needed for adaptive design -->
 				<meta charset="utf-8"/>
 				<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -127,7 +129,7 @@ func (s *service) Shutdown() {
 	s.shutdownWg.Wait()
 }
 
-func (s *service) GetCertificates(c echo.Context) error {
+func (s *service) GetAllCertificates(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	certs, err := s.certMan.GetAll(ctx)
@@ -153,10 +155,10 @@ func (s *service) GetCertificates(c echo.Context) error {
 	return c.JSON(200, res)
 }
 
-func (s *service) PostCertificates(c echo.Context) error {
+func (s *service) CreateCertificate(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	req := new(CertificateReq)
+	req := new(CreateCertificateJSONRequestBody)
 	err := c.Bind(req)
 	if err != nil {
 		return responseServerErr(c, err)
@@ -187,7 +189,7 @@ func (s *service) PostCertificates(c echo.Context) error {
 	return c.JSON(http.StatusCreated, certRes)
 }
 
-func (s *service) PutCertificates(c echo.Context) error {
+func (s *service) RenewAllCertificates(c echo.Context) error {
 	ctx := c.Request().Context()
 	err := s.certMan.RenewAll(ctx)
 	if err != nil {
@@ -199,7 +201,7 @@ func (s *service) PutCertificates(c echo.Context) error {
 	})
 }
 
-func (s *service) DeleteCertificatesDomain(c echo.Context, domain string) error {
+func (s *service) DeleteCertificate(c echo.Context, domain string) error {
 	ctx := c.Request().Context()
 	cert, err := s.certMan.Get(ctx, domain)
 	if err != nil {
@@ -219,7 +221,7 @@ func (s *service) DeleteCertificatesDomain(c echo.Context, domain string) error 
 	})
 }
 
-func (s *service) GetCertificatesDomain(c echo.Context, domain string) error {
+func (s *service) GetCertificateByDomain(c echo.Context, domain string) error {
 	ctx := c.Request().Context()
 
 	cert, err := s.certMan.Get(ctx, domain)
@@ -241,7 +243,7 @@ func (s *service) GetCertificatesDomain(c echo.Context, domain string) error {
 	return c.JSON(http.StatusOK, certRes)
 }
 
-func (s *service) PutCertificatesDomain(c echo.Context, domain string) error {
+func (s *service) RenewCertificateByDomain(c echo.Context, domain string) error {
 	ctx := c.Request().Context()
 	cert, err := s.certMan.Get(ctx, domain)
 	if err != nil {

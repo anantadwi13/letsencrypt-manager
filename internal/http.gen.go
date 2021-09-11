@@ -12,18 +12,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// CertificateReq defines model for certificate-req.
-type CertificateReq struct {
-	// Alternative Domain
-	AltDomains *[]string `json:"alt_domains,omitempty"`
-
-	// Domain
-	Domain string `json:"domain"`
-
-	// Email address
-	Email string `json:"email"`
-}
-
 // CertificateRes defines model for certificate-res.
 type CertificateRes struct {
 	// List domains (Main + Alternative domains)
@@ -55,32 +43,41 @@ type DefaultError GeneralRes
 // NotFound defines model for not-found.
 type NotFound GeneralRes
 
-// PostCertificatesJSONBody defines parameters for PostCertificates.
-type PostCertificatesJSONBody CertificateReq
+// CreateCertificateJSONBody defines parameters for CreateCertificate.
+type CreateCertificateJSONBody struct {
+	// Alternative Domain
+	AltDomains *[]string `json:"alt_domains,omitempty"`
 
-// PostCertificatesJSONRequestBody defines body for PostCertificates for application/json ContentType.
-type PostCertificatesJSONRequestBody PostCertificatesJSONBody
+	// Domain
+	Domain string `json:"domain"`
+
+	// Email address
+	Email string `json:"email"`
+}
+
+// CreateCertificateJSONRequestBody defines body for CreateCertificate for application/json ContentType.
+type CreateCertificateJSONRequestBody CreateCertificateJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get all certificates
 	// (GET /certificates)
-	GetCertificates(ctx echo.Context) error
+	GetAllCertificates(ctx echo.Context) error
 	// Create certificate
 	// (POST /certificates)
-	PostCertificates(ctx echo.Context) error
+	CreateCertificate(ctx echo.Context) error
 	// Renew all certificates
 	// (PUT /certificates)
-	PutCertificates(ctx echo.Context) error
+	RenewAllCertificates(ctx echo.Context) error
 	// Delete certificate
 	// (DELETE /certificates/{domain})
-	DeleteCertificatesDomain(ctx echo.Context, domain string) error
+	DeleteCertificate(ctx echo.Context, domain string) error
 	// Get certificate by domain name
 	// (GET /certificates/{domain})
-	GetCertificatesDomain(ctx echo.Context, domain string) error
+	GetCertificateByDomain(ctx echo.Context, domain string) error
 	// Renew certificate for selected domain
 	// (PUT /certificates/{domain})
-	PutCertificatesDomain(ctx echo.Context, domain string) error
+	RenewCertificateByDomain(ctx echo.Context, domain string) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -88,35 +85,35 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// GetCertificates converts echo context to params.
-func (w *ServerInterfaceWrapper) GetCertificates(ctx echo.Context) error {
+// GetAllCertificates converts echo context to params.
+func (w *ServerInterfaceWrapper) GetAllCertificates(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetCertificates(ctx)
+	err = w.Handler.GetAllCertificates(ctx)
 	return err
 }
 
-// PostCertificates converts echo context to params.
-func (w *ServerInterfaceWrapper) PostCertificates(ctx echo.Context) error {
+// CreateCertificate converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateCertificate(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PostCertificates(ctx)
+	err = w.Handler.CreateCertificate(ctx)
 	return err
 }
 
-// PutCertificates converts echo context to params.
-func (w *ServerInterfaceWrapper) PutCertificates(ctx echo.Context) error {
+// RenewAllCertificates converts echo context to params.
+func (w *ServerInterfaceWrapper) RenewAllCertificates(ctx echo.Context) error {
 	var err error
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutCertificates(ctx)
+	err = w.Handler.RenewAllCertificates(ctx)
 	return err
 }
 
-// DeleteCertificatesDomain converts echo context to params.
-func (w *ServerInterfaceWrapper) DeleteCertificatesDomain(ctx echo.Context) error {
+// DeleteCertificate converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteCertificate(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "domain" -------------
 	var domain string
@@ -127,12 +124,12 @@ func (w *ServerInterfaceWrapper) DeleteCertificatesDomain(ctx echo.Context) erro
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.DeleteCertificatesDomain(ctx, domain)
+	err = w.Handler.DeleteCertificate(ctx, domain)
 	return err
 }
 
-// GetCertificatesDomain converts echo context to params.
-func (w *ServerInterfaceWrapper) GetCertificatesDomain(ctx echo.Context) error {
+// GetCertificateByDomain converts echo context to params.
+func (w *ServerInterfaceWrapper) GetCertificateByDomain(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "domain" -------------
 	var domain string
@@ -143,12 +140,12 @@ func (w *ServerInterfaceWrapper) GetCertificatesDomain(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.GetCertificatesDomain(ctx, domain)
+	err = w.Handler.GetCertificateByDomain(ctx, domain)
 	return err
 }
 
-// PutCertificatesDomain converts echo context to params.
-func (w *ServerInterfaceWrapper) PutCertificatesDomain(ctx echo.Context) error {
+// RenewCertificateByDomain converts echo context to params.
+func (w *ServerInterfaceWrapper) RenewCertificateByDomain(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "domain" -------------
 	var domain string
@@ -159,7 +156,7 @@ func (w *ServerInterfaceWrapper) PutCertificatesDomain(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.PutCertificatesDomain(ctx, domain)
+	err = w.Handler.RenewCertificateByDomain(ctx, domain)
 	return err
 }
 
@@ -191,11 +188,11 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.GET(baseURL+"/certificates", wrapper.GetCertificates)
-	router.POST(baseURL+"/certificates", wrapper.PostCertificates)
-	router.PUT(baseURL+"/certificates", wrapper.PutCertificates)
-	router.DELETE(baseURL+"/certificates/:domain", wrapper.DeleteCertificatesDomain)
-	router.GET(baseURL+"/certificates/:domain", wrapper.GetCertificatesDomain)
-	router.PUT(baseURL+"/certificates/:domain", wrapper.PutCertificatesDomain)
+	router.GET(baseURL+"/certificates", wrapper.GetAllCertificates)
+	router.POST(baseURL+"/certificates", wrapper.CreateCertificate)
+	router.PUT(baseURL+"/certificates", wrapper.RenewAllCertificates)
+	router.DELETE(baseURL+"/certificates/:domain", wrapper.DeleteCertificate)
+	router.GET(baseURL+"/certificates/:domain", wrapper.GetCertificateByDomain)
+	router.PUT(baseURL+"/certificates/:domain", wrapper.RenewCertificateByDomain)
 
 }
